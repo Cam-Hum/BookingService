@@ -77,7 +77,8 @@ app.get('/checkbooking', async (req, res) => {
 
 app.post('/makebooking', async (req, res) => {
     try {
-        const {date, room_id, user_id} = req.query;
+        const {date, room_id} = req.query;
+        const user_id = req.query.user_id || req.headers["x-user-id"];
         if (!date || !room_id || !user_id) {
             return res.status(400).json({ error: 'Missing required query parameters: date, room_id or user_id' });
         }
