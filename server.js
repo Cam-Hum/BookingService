@@ -20,13 +20,22 @@ app.use(express.json())
 
 app.get('/calcprice' , async (req, res) => {
     try {
-        const {date, location_id, room_id} = req.query;
+        let {date, location_id, room_id} = req.query;
+        try {
+            date = date[0];
+            location_id = location_id[0];
+            room_id = room_id[0];
+        }
+        catch (error) {
+            console.error('Error parsing query parameters:', error);
+            return res.status(400).json({ error: 'Invalid query parameters' });
+        }
         if (!date || !location_id) {
             return res.status(400).json({ error: 'Missing required query parameters: date or location_id' });
         }
-        const tempReq = await fetch('http://localhost:8080/?location_id=' + location_id + '&date=' + date);
+        const tempReq = await fetch('http://weatherservice:8080/?location_id=' + location_id + '&date=' + date);
         const tempData = await tempReq.json();
-        const roomReq = await fetch('http://localhost:8081/price?id=' + room_id);
+        const roomReq = await fetch('http://roomservice:8081/price?id=' + room_id);
         const roomData = await roomReq.json();
         let finalPrice;
         let tempOffset = tempData.temp - 21;
@@ -51,6 +60,7 @@ app.get('/calcprice' , async (req, res) => {
         return res.json({adjustedPrice: finalPrice});
     }
     catch (error) {
+        console.error('Error calculating price:', error);
         return res.status(500).json({ error: 'Internal server error' });
     }
 });
@@ -89,6 +99,17 @@ app.post('/makebooking', async (req, res) => {
         };
         await database.collection('bookingData').insertOne(newBooking);
         return res.json({ message: 'Booking created successfully' });
+    }
+    catch (error) {
+        return res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+app.get('/getrooms', async (req, res) => {
+    try {
+        const roomsResp = await fetch('http://roomservice:8081/rooms');
+        const roomsData = await roomsResp.json();
+        return res.json(roomsData);
     }
     catch (error) {
         return res.status(500).json({ error: 'Internal server error' });
