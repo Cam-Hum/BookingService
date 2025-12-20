@@ -72,7 +72,6 @@ app.get('/checkbooking', async (req, res) => {
             return res.status(400).json({ error: 'Missing required query parameters: date or room_id' });
         }
         const booking = await database.collection('bookingData').findOne({date: String(date), room_id: String(room_id)});
-        console.log(booking);
         if (booking != null) {
             return res.json({available: false});
         }
@@ -89,6 +88,15 @@ app.post('/makebooking', async (req, res) => {
     try {
         const {date, room_id} = req.query;
         const user_id = req.query.user_id || req.headers["x-user-id"];
+        try {
+            date = date[0];
+            user_id = user_id[0];
+            room_id = room_id[0];
+        }
+        catch (error) {
+            console.error('Error parsing query parameters:', error);
+            return res.status(400).json({ error: 'Invalid query parameters' });
+        }
         if (!date || !room_id || !user_id) {
             return res.status(400).json({ error: 'Missing required query parameters: date, room_id or user_id' });
         }
@@ -97,6 +105,7 @@ app.post('/makebooking', async (req, res) => {
             room_id: String(room_id),
             date: String(date)            
         };
+        console.log("Booking created" + user_id + " " + room_id + " " + date);
         await database.collection('bookingData').insertOne(newBooking);
         return res.json({ message: 'Booking created successfully' });
     }
